@@ -4,29 +4,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>櫻花科學計算機</title>
+<title>櫻花科學計算機 Pro</title>
 
 <style>
 body {
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
     background: linear-gradient(135deg,#ffe6ee,#ffd6e7,#f8bbd0);
-
-    font-family: "Noto Sans TC", sans-serif;
+    font-family: sans-serif;
 }
 
-/* 計算機外框 */
+/* 外框 */
 .calculator {
     width: 420px;
+    padding: 20px;
+    border-radius: 30px;
     background: rgba(255,255,255,0.75);
     backdrop-filter: blur(15px);
-    border-radius: 30px;
-    padding: 20px;
-    box-shadow: 0 15px 40px rgba(255,105,180,0.25);
+    box-shadow: 0 20px 50px rgba(255,105,180,0.25);
 }
 
 /* 顯示器 */
@@ -35,64 +33,47 @@ body {
     height: 90px;
     border: none;
     border-radius: 20px;
-    background: #fff8fb;
-    color: #c2185b;
-    font-size: 36px;
+    font-size: 34px;
     text-align: right;
     padding: 15px;
     box-sizing: border-box;
-    margin-bottom: 15px;
+    color: #c2185b;
+    background: linear-gradient(90deg,#fff8fb,#ffe4ec,#fff8fb);
+    background-size: 200% 100%;
+    animation: shimmer 6s infinite linear;
 }
 
-/* 按鈕區 */
-.buttons {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+@keyframes shimmer {
+    0% { background-position: 0% }
+    100% { background-position: 200% }
 }
 
 /* 按鈕 */
+.buttons {
+    display:grid;
+    grid-template-columns: repeat(4,1fr);
+    gap:10px;
+    margin-top:15px;
+}
+
 button {
-    height: 60px;
-    border: none;
-    border-radius: 18px;
-    font-size: 18px;
-    cursor: pointer;
-    transition: 0.2s;
+    height:60px;
+    border:none;
+    border-radius:18px;
+    font-size:18px;
+    cursor:pointer;
+    transition:0.15s;
 }
 
-button:hover {
-    transform: scale(1.05);
-}
+button:active { transform: scale(0.92); }
+button:hover { transform: translateY(-2px); }
 
-/* 數字 */
-.number {
-    background: #ffe4ec;
-    color: #ad1457;
-}
+.number { background:#ffe4ec; color:#ad1457; }
+.operator { background:#ff8fb1; color:white; }
+.function { background:#fff0f5; color:#ad1457; }
+.science { background:#fce4ec; color:#880e4f; }
 
-/* 運算 */
-.operator {
-    background: #ff8fb1;
-    color: white;
-}
-
-/* 功能鍵 */
-.function {
-    background: #fff0f5;
-    color: #ad1457;
-}
-
-/* 科學鍵 */
-.science {
-    background: #fce4ec;
-    color: #880e4f;
-}
-
-/* 0 */
-.zero {
-    grid-column: span 2;
-}
+.zero { grid-column: span 2; }
 </style>
 </head>
 
@@ -104,167 +85,366 @@ button:hover {
 
 <div class="buttons">
 
-<!-- 科學計算 -->
-<button class="science" onclick="scientific('sin')">sin</button>
-<button class="science" onclick="scientific('cos')">cos</button>
-<button class="science" onclick="scientific('tan')">tan</button>
-<button class="function" onclick="allClear()">AC</button>
+<!-- 科學 -->
+<button class="science" onclick="append('(')">(</button>
+<button class="science" onclick="append(')')">)</button>
+<button class="science" onclick="append('Math.sin(')">sin</button>
+<button class="function" onclick="clearAll()">AC</button>
 
-<button class="science" onclick="scientific('sqrt')">√</button>
-<button class="science" onclick="scientific('square')">x²</button>
-<button class="science" onclick="scientific('log')">log</button>
-<button class="function" onclick="backspace()">⌫</button>
+<button class="science" onclick="append('Math.cos(')">cos</button>
+<button class="science" onclick="append('Math.tan(')">tan</button>
+<button class="science" onclick="append('Math.sqrt(')">√</button>
+<button class="function" onclick="back()">⌫</button>
 
-<button class="function" onclick="insertConstant('PI')">π</button>
-<button class="function" onclick="insertConstant('E')">e</button>
-<button class="function" onclick="percentage()">%</button>
-<button class="operator" onclick="appendOperator('/')">÷</button>
+<button class="function" onclick="append(String(Math.PI))">π</button>
+<button class="function" onclick="append(String(Math.E))">e</button>
+<button class="science" onclick="append('/100')">%</button>
+<button class="operator" onclick="append('/')">÷</button>
 
 <!-- 數字 -->
-<button class="number" onclick="appendNumber('7')">7</button>
-<button class="number" onclick="appendNumber('8')">8</button>
-<button class="number" onclick="appendNumber('9')">9</button>
-<button class="operator" onclick="appendOperator('*')">×</button>
+<button class="number" onclick="append('7')">7</button>
+<button class="number" onclick="append('8')">8</button>
+<button class="number" onclick="append('9')">9</button>
+<button class="operator" onclick="append('*')">×</button>
 
-<button class="number" onclick="appendNumber('4')">4</button>
-<button class="number" onclick="appendNumber('5')">5</button>
-<button class="number" onclick="appendNumber('6')">6</button>
-<button class="operator" onclick="appendOperator('-')">−</button>
+<button class="number" onclick="append('4')">4</button>
+<button class="number" onclick="append('5')">5</button>
+<button class="number" onclick="append('6')">6</button>
+<button class="operator" onclick="append('-')">−</button>
 
-<button class="number" onclick="appendNumber('1')">1</button>
-<button class="number" onclick="appendNumber('2')">2</button>
-<button class="number" onclick="appendNumber('3')">3</button>
-<button class="operator" onclick="appendOperator('+')">+</button>
+<button class="number" onclick="append('1')">1</button>
+<button class="number" onclick="append('2')">2</button>
+<button class="number" onclick="append('3')">3</button>
+<button class="operator" onclick="append('+')">+</button>
 
-<button class="number zero" onclick="appendNumber('0')">0</button>
-<button class="number" onclick="appendDecimal()">.</button>
-<button class="operator" onclick="calculate()">=</button>
+<button class="number zero" onclick="append('0')">0</button>
+<button class="number" onclick="append('.')">.</button>
+<button class="operator" onclick="calc()">=</button>
 
 </div>
 </div>
 
 <script>
 
-let currentInput = "0";
-let previousInput = "";
-let operator = null;
-let waiting = false;
-
+let expr = "";
 const display = document.getElementById("display");
 
-function update() {
-display.value = currentInput;
+function render() {
+    display.value = expr || "0";
 }
 
-function appendNumber(n) {
-if (waiting) {
-currentInput = n;
-waiting = false;
-} else {
-currentInput = currentInput === "0" ? n : currentInput + n;
-}
-update();
+/* =========================
+   🧠 TOKENIZER（修正版）
+========================= */
+
+function tokenize(str) {
+
+    const tokens = [];
+    let num = "";
+
+    const isNum = c => /[0-9.]/.test(c);
+    const isAlpha = c => /[a-z]/i.test(c);
+
+    for (let i = 0; i < str.length; i++) {
+
+        let c = str[i];
+
+        /* number */
+        if (isNum(c)) {
+            num += c;
+            continue;
+        }
+
+        if (num) {
+            tokens.push(parseFloat(num));
+            num = "";
+        }
+
+        /* function / constants */
+        if (isAlpha(c)) {
+
+            let name = c;
+
+            while (isAlpha(str[i + 1])) {
+                name += str[++i];
+            }
+
+            tokens.push(name);
+            continue;
+        }
+
+        /* operators */
+        if ("+-*/()^,".includes(c)) {
+            tokens.push(c);
+            continue;
+        }
+    }
+
+    if (num) tokens.push(parseFloat(num));
+
+    return fixImplicitMultiplication(tokens);
 }
 
-function appendDecimal() {
-if (waiting) {
-currentInput = "0.";
-waiting = false;
-} else if (!currentInput.includes(".")) {
-currentInput += ".";
-}
-update();
+/* =========================
+   🔥 修正 implicit multiplication
+========================= */
+
+function isValue(t) {
+    return (
+        typeof t === "number" ||
+        t === "pi" ||
+        t === "e" ||
+        t === ")"
+    );
 }
 
-function appendOperator(op) {
-const val = parseFloat(currentInput);
-
-if (operator && waiting) {
-operator = op;
-return;
+function isFunction(t) {
+    return ["sin","cos","tan","sqrt","log","abs"].includes(t);
 }
 
-if (previousInput === "") {
-previousInput = val;
-} else if (operator) {
-previousInput = operate(previousInput, val, operator);
-currentInput = String(previousInput);
-update();
+function fixImplicitMultiplication(tokens) {
+
+    const out = [];
+
+    for (let i = 0; i < tokens.length; i++) {
+
+        const t = tokens[i];
+        const next = tokens[i + 1];
+
+        out.push(t);
+
+        if (!next) continue;
+
+        /* 2(3+1) */
+        if (
+            isValue(t) &&
+            next === "("
+        ) {
+            out.push("*");
+            continue;
+        }
+
+        /* 2sin(30) */
+        if (
+            typeof t === "number" &&
+            isFunction(next)
+        ) {
+            out.push("*");
+            continue;
+        }
+
+        /* pi(2) */
+        if (
+            (t === "pi" || t === "e") &&
+            next === "("
+        ) {
+            out.push("*");
+        }
+    }
+
+    return out;
 }
 
-operator = op;
-waiting = true;
+/* =========================
+   🧠 SHUNTING YARD（修正版 function）
+========================= */
+
+function toRPN(tokens) {
+
+    const output = [];
+    const ops = [];
+
+    const prec = {
+        "+":1,
+        "-":1,
+        "*":2,
+        "/":2,
+        "^":3
+    };
+
+    const right = {
+        "^":true
+    };
+
+    const functions = ["sin","cos","tan","sqrt","log","abs"];
+
+    for (let t of tokens) {
+
+        /* number */
+        if (typeof t === "number" ||
+            t === "pi" ||
+            t === "e") {
+            output.push(t);
+        }
+
+        /* function */
+        else if (functions.includes(t)) {
+            ops.push(t);
+        }
+
+        /* operators */
+        else if ("+-*/^".includes(t)) {
+
+            while (
+                ops.length &&
+                "+-*/^".includes(ops[ops.length - 1]) &&
+                (
+                    (!right[t] &&
+                    prec[ops[ops.length - 1]] >= prec[t]) ||
+                    (right[t] &&
+                    prec[ops[ops.length - 1]] > prec[t])
+                )
+            ) {
+                output.push(ops.pop());
+            }
+
+            ops.push(t);
+        }
+
+        else if (t === "(") {
+            ops.push(t);
+        }
+
+        else if (t === ")") {
+
+            while (
+                ops.length &&
+                ops[ops.length - 1] !== "("
+            ) {
+                output.push(ops.pop());
+            }
+
+            ops.pop();
+
+            /* function call */
+            if (
+                ops.length &&
+                functions.includes(ops[ops.length - 1])
+            ) {
+                output.push(ops.pop());
+            }
+        }
+    }
+
+    while (ops.length) {
+        output.push(ops.pop());
+    }
+
+    return output;
 }
 
-function operate(a,b,op){
-switch(op){
-case "+": return a+b;
-case "-": return a-b;
-case "*": return a*b;
-case "/": return b===0?0:a/b;
-}
+/* =========================
+   🧮 EVAL RPN（修正版）
+========================= */
+
+function toRad(x) {
+    return x * Math.PI / 180;
 }
 
-function calculate(){
-if(!operator || waiting) return;
-const val = parseFloat(currentInput);
-currentInput = String(operate(previousInput,val,operator));
-previousInput = "";
-operator = null;
-waiting = false;
-update();
+function evalRPN(rpn) {
+
+    const stack = [];
+
+    for (let t of rpn) {
+
+        if (typeof t === "number") {
+            stack.push(t);
+        }
+
+        else if (t === "pi") stack.push(Math.PI);
+        else if (t === "e") stack.push(Math.E);
+
+        else if ("+-*/^".includes(t)) {
+
+            const b = stack.pop();
+            const a = stack.pop();
+
+            switch (t) {
+                case "+": stack.push(a + b); break;
+                case "-": stack.push(a - b); break;
+                case "*": stack.push(a * b); break;
+                case "/": stack.push(a / b); break;
+                case "^": stack.push(Math.pow(a, b)); break;
+            }
+        }
+
+        else {
+
+            const a = stack.pop();
+
+            switch (t) {
+
+                case "sin":
+                    stack.push(Math.sin(toRad(a)));
+                    break;
+
+                case "cos":
+                    stack.push(Math.cos(toRad(a)));
+                    break;
+
+                case "tan":
+                    stack.push(Math.tan(toRad(a)));
+                    break;
+
+                case "sqrt":
+                    stack.push(Math.sqrt(a));
+                    break;
+
+                case "log":
+                    stack.push(Math.log10(a));
+                    break;
+
+                case "abs":
+                    stack.push(Math.abs(a));
+                    break;
+            }
+        }
+    }
+
+    return stack[0];
 }
 
-function allClear(){
-currentInput="0";
-previousInput="";
-operator=null;
-waiting=false;
-update();
+/* =========================
+   🚀 MAIN
+========================= */
+
+function calc() {
+
+    try {
+
+        const tokens = tokenize(expr);
+        const rpn = toRPN(tokens);
+        const result = evalRPN(rpn);
+
+        if (isNaN(result)) throw Error();
+
+        expr = String(result);
+        render();
+
+    } catch (e) {
+        expr = "";
+        display.value = "Error";
+    }
 }
 
-function backspace(){
-if(waiting)return;
-currentInput=currentInput.slice(0,-1)||"0";
-update();
+/* =========================
+   UI（不動）
+========================= */
+
+function append(v) {
+    expr += v;
+    render();
 }
 
-function percentage(){
-currentInput=String(parseFloat(currentInput)/100);
-update();
+function clearAll() {
+    expr = "";
+    render();
 }
 
-function insertConstant(type){
-if(type==="PI") currentInput=String(Math.PI);
-if(type==="E") currentInput=String(Math.E);
-update();
+function back() {
+    expr = expr.slice(0, -1);
+    render();
 }
-
-function scientific(type){
-let v=parseFloat(currentInput);
-switch(type){
-case "sin": v=Math.sin(v);break;
-case "cos": v=Math.cos(v);break;
-case "tan": v=Math.tan(v);break;
-case "sqrt": v=Math.sqrt(v);break;
-case "square": v=v*v;break;
-case "log": v=Math.log10(v);break;
-}
-currentInput=String(v);
-update();
-}
-
-// 鍵盤支援
-document.addEventListener("keydown",(e)=>{
-if(!isNaN(e.key)) appendNumber(e.key);
-else if(e.key===".") appendDecimal();
-else if(["+","-","*","/"].includes(e.key)) appendOperator(e.key);
-else if(e.key==="Enter") calculate();
-else if(e.key==="Backspace") backspace();
-else if(e.key==="Escape") allClear();
-});
-
-update();
 
 </script>
 
