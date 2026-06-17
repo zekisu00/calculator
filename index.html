@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>完整計算機</title>
+
+    <style>
+        /* 整個網頁置中 */
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f0f2f5;
+            font-family: Arial, sans-serif;
+        }
+
+        /* 計算機外框 */
+        .calculator {
+            width: 320px;
+            background-color: #2c2c2c;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 顯示區 */
+        .display {
+            width: 100%;
+            height: 80px;
+            box-sizing: border-box;
+            border: none;
+            border-radius: 10px;
+            background: #1a1a1a;
+            color: white;
+            font-size: 36px;
+            text-align: right;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* 按鈕排列 */
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        /* 所有按鈕 */
+        button {
+            height: 60px;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        /* 功能鍵 */
+        .function {
+            background-color: #a5a5a5;
+        }
+
+        /* 運算符號 */
+        .operator {
+            background-color: #ff9500;
+            color: white;
+        }
+
+        /* 數字 */
+        .number {
+            background-color: #505050;
+            color: white;
+        }
+
+        /* 0 按鈕 */
+        .zero {
+            grid-column: span 2;
+            border-radius: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="calculator">
+
+        <!-- 顯示目前輸入內容 -->
+        <input type="text"
+               class="display"
+               id="display"
+               value="0"
+               readonly>
+
+        <div class="buttons">
+
+            <button class="function" onclick="allClear()">AC</button>
+            <button class="function" onclick="toggleSign()">+/-</button>
+            <button class="function" onclick="percentage()">%</button>
+            <button class="operator" onclick="appendOperator('/')">÷</button>
+
+            <button class="number" onclick="appendNumber('7')">7</button>
+            <button class="number" onclick="appendNumber('8')">8</button>
+            <button class="number" onclick="appendNumber('9')">9</button>
+            <button class="operator" onclick="appendOperator('*')">×</button>
+
+            <button class="number" onclick="appendNumber('4')">4</button>
+            <button class="number" onclick="appendNumber('5')">5</button>
+            <button class="number" onclick="appendNumber('6')">6</button>
+            <button class="operator" onclick="appendOperator('-')">−</button>
+
+            <button class="number" onclick="appendNumber('1')">1</button>
+            <button class="number" onclick="appendNumber('2')">2</button>
+            <button class="number" onclick="appendNumber('3')">3</button>
+            <button class="operator" onclick="appendOperator('+')">+</button>
+
+            <button class="number zero" onclick="appendNumber('0')">0</button>
+            <button class="number" onclick="appendDecimal()">.</button>
+            <button class="operator" onclick="calculate()">=</button>
+
+            <button class="function"
+                    style="grid-column: span 4; border-radius: 20px;"
+                    onclick="backspace()">
+                ⌫ 刪除
+            </button>
+
+        </div>
+    </div>
+
+    <script>
+
+        /*
+            display：顯示區
+            currentInput：目前正在輸入的數字
+            previousInput：前一次輸入的數字
+            operator：目前的運算符號
+        */
+
+        const display = document.getElementById("display");
+
+        let currentInput = "0";
+        let previousInput = "";
+        let operator = null;
+
+        /*
+            更新畫面上的數字
+        */
+        function updateDisplay() {
+            display.value = currentInput;
+        }
+
+        /*
+            按下數字按鈕
+        */
+        function appendNumber(number) {
+
+            // 如果目前是 0，直接替換
+            if (currentInput === "0") {
+                currentInput = number;
+            } else {
+                currentInput += number;
+            }
+
+            updateDisplay();
+        }
+
+        /*
+            加入小數點
+        */
+        function appendDecimal() {
+
+            // 避免出現 1.2.3
+            if (!currentInput.includes(".")) {
+                currentInput += ".";
+            }
+
+            updateDisplay();
+        }
+
+        /*
+            選擇運算符號
+        */
+        function appendOperator(op) {
+
+            previousInput = currentInput;
+
+            operator = op;
+
+            currentInput = "0";
+        }
+
+        /*
+            執行計算
+        */
+        function calculate() {
+
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+
+            let result;
+
+            switch (operator) {
+
+                case "+":
+                    result = prev + current;
+                    break;
+
+                case "-":
+                    result = prev - current;
+                    break;
+
+                case "*":
+                    result = prev * current;
+                    break;
+
+                case "/":
+
+                    if (current === 0) {
+                        alert("不能除以 0");
+                        return;
+                    }
+
+                    result = prev / current;
+                    break;
+
+                default:
+                    return;
+            }
+
+            currentInput = result.toString();
+
+            operator = null;
+            previousInput = "";
+
+            updateDisplay();
+        }
+
+        /*
+            AC：全部清除
+        */
+        function allClear() {
+
+            currentInput = "0";
+
+            previousInput = "";
+
+            operator = null;
+
+            updateDisplay();
+        }
+
+        /*
+            正負號切換
+        */
+        function toggleSign() {
+
+            currentInput = (
+                parseFloat(currentInput) * -1
+            ).toString();
+
+            updateDisplay();
+        }
+
+        /*
+            百分比功能
+            例如：50 → 0.5
+        */
+        function percentage() {
+
+            currentInput = (
+                parseFloat(currentInput) / 100
+            ).toString();
+
+            updateDisplay();
+        }
+
+        /*
+            刪除最後一個字元
+        */
+        function backspace() {
+
+            currentInput =
+                currentInput.slice(0, -1);
+
+            if (currentInput === "") {
+                currentInput = "0";
+            }
+
+            updateDisplay();
+        }
+
+        /*
+            支援鍵盤輸入
+        */
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                const key = event.key;
+
+                if (
+                    !isNaN(key)
+                ) {
+                    appendNumber(key);
+                }
+
+                else if (
+                    key === "."
+                ) {
+                    appendDecimal();
+                }
+
+                else if (
+                    ["+", "-", "*", "/"]
+                        .includes(key)
+                ) {
+                    appendOperator(key);
+                }
+
+                else if (
+                    key === "Enter"
+                ) {
+                    calculate();
+                }
+
+                else if (
+                    key === "Backspace"
+                ) {
+                    backspace();
+                }
+
+                else if (
+                    key === "Escape"
+                ) {
+                    allClear();
+                }
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>
