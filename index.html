@@ -38,7 +38,7 @@ body {
     padding: 15px;
     box-sizing: border-box;
     color: #c2185b;
-    background: linear-gradient(90deg,#fff8fb,#ffe4ec,#fff8fb);
+    background: #ffddec;
     background-size: 200% 100%;
     animation: shimmer 6s infinite linear;
 }
@@ -125,328 +125,50 @@ button:hover { transform: translateY(-2px); }
 </div>
 
 <script>
+    let expr = "";
+    const display = document.getElementById("display");
 
-let expr = "";
-const display = document.getElementById("display");
-
-function render() {
-    display.value = expr || "0";
-}
-
-/* =========================
-   🧠 TOKENIZER（修正版）
-========================= */
-
-function tokenize(str) {
-
-    const tokens = [];
-    let num = "";
-
-    const isNum = c => /[0-9.]/.test(c);
-    const isAlpha = c => /[a-z]/i.test(c);
-
-    for (let i = 0; i < str.length; i++) {
-
-        let c = str[i];
-
-        /* number */
-        if (isNum(c)) {
-            num += c;
-            continue;
-        }
-
-        if (num) {
-            tokens.push(parseFloat(num));
-            num = "";
-        }
-
-        /* function / constants */
-        if (isAlpha(c)) {
-
-            let name = c;
-
-            while (isAlpha(str[i + 1])) {
-                name += str[++i];
-            }
-
-            tokens.push(name);
-            continue;
-        }
-
-        /* operators */
-        if ("+-*/()^,".includes(c)) {
-            tokens.push(c);
-            continue;
-        }
+    // 更新顯示器的內容
+    function append(v) {
+        expr += v;
+        display.value = expr;
     }
 
-    if (num) tokens.push(parseFloat(num));
-
-    return fixImplicitMultiplication(tokens);
-}
-
-/* =========================
-   🔥 修正 implicit multiplication
-========================= */
-
-function isValue(t) {
-    return (
-        typeof t === "number" ||
-        t === "pi" ||
-        t === "e" ||
-        t === ")"
-    );
-}
-
-function isFunction(t) {
-    return ["sin","cos","tan","sqrt","log","abs"].includes(t);
-}
-
-function fixImplicitMultiplication(tokens) {
-
-    const out = [];
-
-    for (let i = 0; i < tokens.length; i++) {
-
-        const t = tokens[i];
-        const next = tokens[i + 1];
-
-        out.push(t);
-
-        if (!next) continue;
-
-        /* 2(3+1) */
-        if (
-            isValue(t) &&
-            next === "("
-        ) {
-            out.push("*");
-            continue;
-        }
-
-        /* 2sin(30) */
-        if (
-            typeof t === "number" &&
-            isFunction(next)
-        ) {
-            out.push("*");
-            continue;
-        }
-
-        /* pi(2) */
-        if (
-            (t === "pi" || t === "e") &&
-            next === "("
-        ) {
-            out.push("*");
-        }
-    }
-
-    return out;
-}
-
-/* =========================
-   🧠 SHUNTING YARD（修正版 function）
-========================= */
-
-function toRPN(tokens) {
-
-    const output = [];
-    const ops = [];
-
-    const prec = {
-        "+":1,
-        "-":1,
-        "*":2,
-        "/":2,
-        "^":3
-    };
-
-    const right = {
-        "^":true
-    };
-
-    const functions = ["sin","cos","tan","sqrt","log","abs"];
-
-    for (let t of tokens) {
-
-        /* number */
-        if (typeof t === "number" ||
-            t === "pi" ||
-            t === "e") {
-            output.push(t);
-        }
-
-        /* function */
-        else if (functions.includes(t)) {
-            ops.push(t);
-        }
-
-        /* operators */
-        else if ("+-*/^".includes(t)) {
-
-            while (
-                ops.length &&
-                "+-*/^".includes(ops[ops.length - 1]) &&
-                (
-                    (!right[t] &&
-                    prec[ops[ops.length - 1]] >= prec[t]) ||
-                    (right[t] &&
-                    prec[ops[ops.length - 1]] > prec[t])
-                )
-            ) {
-                output.push(ops.pop());
-            }
-
-            ops.push(t);
-        }
-
-        else if (t === "(") {
-            ops.push(t);
-        }
-
-        else if (t === ")") {
-
-            while (
-                ops.length &&
-                ops[ops.length - 1] !== "("
-            ) {
-                output.push(ops.pop());
-            }
-
-            ops.pop();
-
-            /* function call */
-            if (
-                ops.length &&
-                functions.includes(ops[ops.length - 1])
-            ) {
-                output.push(ops.pop());
-            }
-        }
-    }
-
-    while (ops.length) {
-        output.push(ops.pop());
-    }
-
-    return output;
-}
-
-/* =========================
-   🧮 EVAL RPN（修正版）
-========================= */
-
-function toRad(x) {
-    return x * Math.PI / 180;
-}
-
-function evalRPN(rpn) {
-
-    const stack = [];
-
-    for (let t of rpn) {
-
-        if (typeof t === "number") {
-            stack.push(t);
-        }
-
-        else if (t === "pi") stack.push(Math.PI);
-        else if (t === "e") stack.push(Math.E);
-
-        else if ("+-*/^".includes(t)) {
-
-            const b = stack.pop();
-            const a = stack.pop();
-
-            switch (t) {
-                case "+": stack.push(a + b); break;
-                case "-": stack.push(a - b); break;
-                case "*": stack.push(a * b); break;
-                case "/": stack.push(a / b); break;
-                case "^": stack.push(Math.pow(a, b)); break;
-            }
-        }
-
-        else {
-
-            const a = stack.pop();
-
-            switch (t) {
-
-                case "sin":
-                    stack.push(Math.sin(toRad(a)));
-                    break;
-
-                case "cos":
-                    stack.push(Math.cos(toRad(a)));
-                    break;
-
-                case "tan":
-                    stack.push(Math.tan(toRad(a)));
-                    break;
-
-                case "sqrt":
-                    stack.push(Math.sqrt(a));
-                    break;
-
-                case "log":
-                    stack.push(Math.log10(a));
-                    break;
-
-                case "abs":
-                    stack.push(Math.abs(a));
-                    break;
-            }
-        }
-    }
-
-    return stack[0];
-}
-
-/* =========================
-   🚀 MAIN
-========================= */
-
-function calc() {
-
-    try {
-
-        const tokens = tokenize(expr);
-        const rpn = toRPN(tokens);
-        const result = evalRPN(rpn);
-
-        if (isNaN(result)) throw Error();
-
-        expr = String(result);
-        render();
-
-    } catch (e) {
+    // 清除所有內容
+    function clearAll() {
         expr = "";
-        display.value = "Error";
+        display.value = "0";
     }
-}
 
-/* =========================
-   UI（不動）
-========================= */
+    // 核心計算邏輯
+    function calc() {
+        try {
+            // 1. 自動補全括號：如果使用者忘了按右括號，我們幫他補上
+            let openCount = (expr.match(/\(/g) || []).length;
+            let closeCount = (expr.match(/\)/g) || []).length;
+            let tempExpr = expr + ")".repeat(openCount - closeCount);
 
-function append(v) {
-    expr += v;
-    render();
-}
+            // 2. 正規化數學表達式
+            // 將 sin, cos, tan 轉為 Math.xxx 並將角度轉弧度
+            let safeExpr = tempExpr
+                .replace(/sin\(([^)]+)\)/g, "Math.sin($1 * Math.PI / 180)")
+                .replace(/cos\(([^)]+)\)/g, "Math.cos($1 * Math.PI / 180)")
+                .replace(/tan\(([^)]+)\)/g, "Math.tan($1 * Math.PI / 180)")
+                .replace(/sqrt\(([^)]+)\)/g, "Math.sqrt($1)");
 
-function clearAll() {
-    expr = "";
-    render();
-}
+            // 3. 安全計算
+            let result = new Function('return ' + safeExpr)();
 
-function back() {
-    expr = expr.slice(0, -1);
-    render();
-}
-
+            // 4. 處理精度 (解決如 0.1+0.2=0.30000000004 的問題)
+            result = Math.round(result * 1000000000000) / 1000000000000;
+            
+            expr = String(result);
+            display.value = expr;
+        } catch (e) {
+            display.value = "Error";
+            expr = "";
+        }
+    }
 </script>
-
 </body>
 </html>

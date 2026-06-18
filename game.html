@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>豪華打磚塊 - 完整版</title>
+    <style>
+        body { margin: 0; background: #1a1a2e; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        h1 { margin-bottom: 10px; color: #4cc9f0; text-shadow: 0 0 10px #4cc9f0; }
+        #gameContainer { position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 3px solid #0f3460; }
+        canvas { background: linear-gradient(to bottom, #16213e, #0f3460); display: block; }
+        
+        #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 5; }
+        
+        #clapping { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        .clap-text { font-size: 50px; animation: clap 0.5s infinite; }
+        @keyframes clap { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+        button { padding: 12px 35px; font-size: 18px; background: #e94560; color: white; border: none; border-radius: 50px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #ff4d6d; transform: scale(1.05); }
+
+        .rule-box { margin-top: 20px; background: #0f3460; padding: 15px 25px; border-radius: 10px; border-left: 5px solid #4cc9f0; width: 430px; }
+        .rule-box h3 { margin-top: 0; color: #4cc9f0; }
+        .rule-box li { margin: 5px 0; color: #e0e0e0; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<h1>打磚塊大師</h1>
+
+<div id="gameContainer">
+    <canvas id="gameCanvas" width="480" height="320"></canvas>
+    <div id="menu">
+        <h2 id="menuText">準備好了嗎？</h2>
+        <button onclick="startGame()">開始遊戲</button>
+    </div>
+    <div id="clapping">
+        <div class="clap-text">👏おめでとう👏</div>
+    </div>
+</div>
+
+<div class="rule-box">
+    <h3>遊戲規則</h3>
+    <li>1. 使用鍵盤「左/右方向鍵」操縱板子接住球</li>
+    <li>2. 球擊碎畫面中所有磚塊即挑戰成功！</li>
+    <li>3. 成功通關有隱藏小彩蛋喔！</li>
+</div>
+
+<iframe id="bgm" width="0" height="0" src="https://www.youtube.com/embed/I1NElpKjm74?autoplay=1" frameborder="0" allow="autoplay"></iframe>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const menu = document.getElementById("menu");
+    const menuText = document.getElementById("menuText");
+    const clapDiv = document.getElementById("clapping");
+
+    let x, y, dx, dy, paddleX, paddleWidth = 80, isRunning = false;
+    let rightPressed = false, leftPressed = false;
+    let bricks = [], score = 0, failCount = 0;
+    let secretCode = [];
+    const colors = ["#ff4d6d", "#4cc9f0", "#f72585"];
+
+    // 鍵盤監聽
+    document.addEventListener("keydown", (e) => {
+        if(e.key.includes("Right")) rightPressed = true;
+        if(e.key.includes("Left")) leftPressed = true;
+        
+        // 金手指邏輯
+        secretCode.push(e.key);
+        if (secretCode.length > 4) secretCode.shift();
+        if (secretCode.join('') === 'pass' && failCount >= 10) triggerCheatWin();
+    });
+    document.addEventListener("keyup", (e) => {
+        if(e.key.includes("Right")) rightPressed = false;
+        if(e.key.includes("Left")) leftPressed = false;
+    });
+
+    function triggerCheatWin() {
+        const cheatDiv = document.createElement('div');
+        cheatDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:99; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white;";
+        cheatDiv.innerHTML = `<h1>🏆 金手指已觸發！</h1><img src="https://via.placeholder.com/400" alt="勝利圖"><p>隱藏勝利！</p><button onclick="location.reload()">重新開始</button>`;
+        document.body.appendChild(cheatDiv);
+    }
+
+    function initGame() {
+        x = canvas.width/2; y = canvas.height-30;
+        dx = 3; dy = -3;
+        paddleX = (canvas.width-paddleWidth)/2;
+        score = 0;
+        bricks = [];
+        for(let c=0; c<5; c++) {
+            bricks[c] = [];
+            for(let r=0; r<3; r++) bricks[c][r] = { x: 0, y: 0, status: 1, color: colors[r] };
+        }
+    }
+
+    function startGame() { initGame(); isRunning = true; menu.style.display = "none"; draw(); }
+
+    function gameOver(msg, isWin) {
+        isRunning = false;
+        menu.style.display = "flex";
+        menuText.innerText = msg;
+        if(!isWin) failCount++;
+        menuText.style.color = isWin ? "#ffeb3b" : "white";
+    }
+
+    function draw() {
+        if (!isRunning) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "#fff";
+        ctx.beginPath(); ctx.roundRect(paddleX, canvas.height-15, paddleWidth, 10, 5); ctx.fill();
+        
+        let grad = ctx.createRadialGradient(x, y, 2, x, y, 10);
+        grad.addColorStop(0, "#fff"); grad.addColorStop(1, "#f1c40f");
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI*2); ctx.fill();
+
+        let activeBricks = 0;
+        for(let c=0; c<5; c++) {
+            for(let r=0; r<3; r++) {
+                if(bricks[c][r].status == 1) {
+                    activeBricks++;
+                    let bx = (c*85)+30; let by = (r*30)+30;
+                    ctx.fillStyle = bricks[c][r].color;
+                    ctx.fillRect(bx, by, 75, 15);
+                    if(x > bx && x < bx+75 && y > by && y < by+15) { dy = -dy; bricks[c][r].status = 0; score++; }
+                }
+            }
+        }
+
+        ctx.fillStyle = "white"; ctx.fillText("Score: " + score, 10, 20);
+
+        if (activeBricks === 0) {
+            isRunning = false;
+            clapDiv.style.display = "flex";
+            document.getElementById("bgm").src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1";
+            setTimeout(() => { clapDiv.style.display = "none"; gameOver("🎉 通關成功！總分: " + score, true); }, 5000);
+            return;
+        }
+
+        if(rightPressed && paddleX < canvas.width-paddleWidth) paddleX += 8;
+        else if(leftPressed && paddleX > 0) paddleX -= 8;
+        if(x + dx > canvas.width || x + dx < 0) dx = -dx;
+        if(y + dy < 0) dy = -dy;
+        else if(y + dy > canvas.height-15) {
+            if(x > paddleX && x < paddleX + paddleWidth) dy = -dy;
+            else { gameOver("💥 遊戲結束！分數: " + score, false); return; }
+        }
+        x += dx; y += dy;
+        requestAnimationFrame(draw);
+    }
+</script>
+</body>
+</html>
